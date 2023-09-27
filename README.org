@@ -1,10 +1,13 @@
 * Retris
 
+#+ATTR_HTML: :width 300px
+[[./screens/retris.png]]
+
 A very simple Tetris clone. Made in Rust using macroquad.
 
 I simply couldn't think of a better name.
 
-** TODO
+* TODO
 - Add simple game mechanics (pause, timer, points, etc)
 - Add textures instead of simple color rectangles
 - Add music

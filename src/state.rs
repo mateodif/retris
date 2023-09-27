@@ -1,3 +1,4 @@
+use std::iter;
 use macroquad::prelude::*;
 use crate::tetromino::Tetromino;
 use crate::display::{DisplayAction, DisplayBlock};
@@ -11,18 +12,27 @@ pub enum Direction {
     Down
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct State {
+#[derive(Debug, Clone)]
+pub struct State <'a> {
     pub board: Board,
     pub position: Position,
-    pub current_piece: Tetromino,
+    pub current_piece: Tetromino<'a>,
     pub screen_size: (usize, usize),
 }
 
-impl Default for State {
-    fn default() -> State {
+impl Default for State <'_> {
+    fn default() -> State <'static> {
         State {
-            board: [[DisplayBlock::default(); 10]; 20],
+            board: iter::repeat_with(||
+                                     iter::repeat_with(DisplayBlock::default)
+                                     .take(10)
+                                     .collect::<Vec<DisplayBlock>>()
+                                     .try_into()
+                                     .unwrap())
+                .take(20)
+                .collect::<Vec<[DisplayBlock;10]>>()
+                .try_into()
+                .unwrap(),
             position: (5, 1),
             current_piece: Tetromino::random(),
             screen_size: (500, 900),
@@ -30,7 +40,7 @@ impl Default for State {
     }
 }
 
-impl State {
+impl State <'_> {
     fn cell_width(&self) -> usize {
         let (width, _) = self.screen_size;
         width / self.board[0].len()
@@ -48,24 +58,26 @@ impl State {
             Direction::Right => (x + 1, y    ),
             Direction::Down =>  (x,     y + 1),
         };
-        if self.current_piece.fits(self.board, new_position) {
+        if self.current_piece.fits(&self.board, new_position) {
             self.position = new_position;
         };
     }
 
     pub fn manipulate_current_piece(&mut self, action: DisplayAction) {
         let (cx, cy) = self.position;
-        if self.current_piece.fits(self.board, self.position) {
+        if self.current_piece.fits(&self.board, self.position) {
             for [x, y] in self.current_piece.shape {
                 let new_x = x + cx;
                 let new_y = y + cy;
-                self.board[new_y as usize][new_x as usize] = DisplayBlock::new(self.current_piece.color, action);
+                self.board[new_y as usize][new_x as usize] = DisplayBlock::new(self.current_piece.color,
+                                                                               action,
+                                                                               self.current_piece.texture.clone());
             };
         };
     }
 
     pub fn can_piece_move_down(&self) -> bool {
-        self.current_piece.fits(self.board, (self.position.0, self.position.1 + 1))
+        self.current_piece.fits(&self.board, (self.position.0, self.position.1 + 1))
     }
 
     fn remove_full_lines(&mut self) {
@@ -80,7 +92,11 @@ impl State {
             }
         }
         for i in non_zero_index..self.board.len() {
-            self.board[i] = [DisplayBlock::default(); 10];
+            self.board[i] = iter::repeat_with(DisplayBlock::default)
+                .take(10)
+                .collect::<Vec<DisplayBlock>>()
+                .try_into()
+                .unwrap()
         }
 
         if non_zero_index > 0 {
@@ -104,12 +120,13 @@ impl State {
         let cell_width = self.cell_width() as f32;
 
         for (i, row) in self.board.iter().enumerate() {
-            for (j, &cell) in row.iter().enumerate() {
+            for (j, cell) in row.iter().enumerate() {
                 let (x, y) = (j as f32 * cell_width, i as f32 * cell_height);
 
                 match cell.action {
                     DisplayAction::Persist | DisplayAction::MustClean => {
-                        draw_rectangle(x, y, cell_width, cell_height, cell.color.unwrap_or(BLACK))
+                        draw_texture(&cell.texture, 0., 0., WHITE);
+                        // draw_rectangle(x, y, cell_width, cell_height, cell.color.unwrap_or(BLACK))
                     },
                     _ => draw_rectangle_lines(x, y, cell_width, cell_height, 1.0, WHITE)
                 }

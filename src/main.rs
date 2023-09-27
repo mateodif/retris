@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#[macro_use]
+extern crate lazy_static;
 
 use macroquad::prelude::*;
 use crate::display::DisplayAction;
@@ -8,6 +10,15 @@ use crate::state::Direction;
 mod state;
 mod tetromino;
 mod display;
+
+fn wait_frame_time(fps: f32) {
+    let minimum_frame_time = 1. / fps;
+    let frame_time = get_frame_time();
+    if frame_time < minimum_frame_time {
+        let time_to_sleep = (minimum_frame_time - frame_time) * 1000.;
+        std::thread::sleep(std::time::Duration::from_millis(time_to_sleep as u64));
+    }
+}
 
 #[macroquad::main("Retris")]
 async fn main() {
@@ -38,7 +49,7 @@ async fn main() {
         }
 
         if is_key_pressed(KeyCode::Up) {
-            if state.current_piece.fits_after_rotate(state.board, state.position) {
+            if state.current_piece.fits_after_rotate(&state.board, state.position) {
                 state.current_piece.rotate();
             }
         }
@@ -59,12 +70,7 @@ async fn main() {
 
         state.draw_board();
 
-        let minimum_frame_time = 1. / 160.; // 160 FPS
-        let frame_time = get_frame_time();
-        if frame_time < minimum_frame_time {
-            let time_to_sleep = (minimum_frame_time - frame_time) * 1000.;
-            std::thread::sleep(std::time::Duration::from_millis(time_to_sleep as u64));
-        }
+        wait_frame_time(160.);
 
         next_frame().await
     }

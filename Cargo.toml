@@ -10,3 +10,6 @@ macroquad = "0.4"
 rand = "0.8.5"
 strum = "0.25"
 strum_macros = "0.25"
+lazy_static = "1.4.0"
+async_once = "0.2.6"
+tokio = { version = "1.32.0", features = ["full"] }

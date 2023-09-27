@@ -1,0 +1,12 @@
+* Retris
+
+A very simple Tetris clone. Made in Rust using macroquad.
+
+I simply couldn't think of a better name.
+
+** TODO
+- Add simple game mechanics (pause, timer, points, etc)
+- Add textures instead of simple color rectangles
+- Add music
+- Check if WASM and other backends behave correctly
+- Add levels and other kind of fancy stuff

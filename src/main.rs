@@ -121,7 +121,7 @@ impl Default for Field {
     fn default() -> Field {
         Field {
             board: [[DisplayBlock::default(); 10]; 20],
-            position: (5, 5),
+            position: (5, 1),
             piece: Tetromino::new(TetrominoType::J) // replace with random
         }
     }
@@ -177,6 +177,30 @@ impl Field {
         true
     }
 
+    fn piece_can_move_down(&self) -> bool {
+        self.piece_fits(self.piece, (self.position.0, self.position.1 + 1))
+    }
+
+    fn remove_full_lines(&mut self) {
+        let mut non_zero_index = 0;
+
+        for current_index in 0..self.board.len() {
+            if !self.board[current_index].iter().all(|cell| cell.action == DisplayAction::Persist) {
+                if current_index != non_zero_index {
+                    self.board.swap(current_index, non_zero_index);
+                }
+                non_zero_index += 1;
+            }
+        }
+        for i in non_zero_index..self.board.len() {
+            self.board[i] = [DisplayBlock::default(); 10];
+        }
+
+        if non_zero_index > 0 {
+            self.board.rotate_left(non_zero_index);
+        }
+    }
+
     pub fn clean_board(&mut self) {
         for row in &mut self.board {
             for cell in row.iter_mut() {
@@ -185,6 +209,7 @@ impl Field {
                 }
             }
         }
+        self.remove_full_lines();
     }
 
     pub fn draw_board(&self) {
@@ -207,7 +232,7 @@ impl Field {
 
     pub fn lock_piece(&mut self) {
         self.manipulate_current_piece(DisplayAction::Persist);
-        self.position = (5, 5);
+        self.position = (5, 1);
         self.piece = Tetromino::random();
     }
 }
@@ -215,14 +240,31 @@ impl Field {
 #[macroquad::main("Retris")]
 async fn main() {
     let mut field = Field::default();
+    let mut start_time = get_time();
 
     loop {
-        clear_background(BLACK);
         request_new_screen_size(SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
-
         field.clean_board();
 
+        clear_background(BLACK);
+
+
+        if get_time() > (start_time + 1.2) {
+            field.move_current_piece(Direction::Down);
+            start_time = get_time();
+        }
+
+        if !field.piece_can_move_down() {
+            field.lock_piece();
+        }
+
         if is_key_pressed(KeyCode::Space) {
+            while field.piece_can_move_down() {
+                field.move_current_piece(Direction::Down);
+            }
+        }
+
+        if is_key_pressed(KeyCode::Up) {
             field.piece.rotate();
         }
 

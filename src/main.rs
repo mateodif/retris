@@ -25,9 +25,11 @@ pub enum Direction {
     Down
 }
 
+type Shape = [[i32; 2]; 4];
+
 #[derive(Debug, Clone, Copy)]
 pub struct Tetromino {
-    shape: [[i32; 2]; 4],
+    shape: Shape,
     color: Color,
     t_type: TetrominoType,
 }
@@ -74,11 +76,52 @@ impl Tetromino {
         Self::new(TetrominoType::iter().get(num).unwrap_or(TetrominoType::I))
     }
 
-    pub fn rotate(&mut self) {
-        self.shape = self.shape.map(|coord| {
+    pub fn fits(&self, board: Board, position: Position) -> bool {
+        let (cx, cy) = position;
+
+        for [x, y] in self.shape {
+            let new_x = (x + cx) as usize;
+            let new_y = (y + cy) as usize;
+
+            if new_y < board.len() && new_x < board[0].len() {
+                if board[new_y][new_x].action != DisplayAction::Empty {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn fits_after_rotate(&self, board: Board, position: Position) -> bool {
+        let (cx, cy) = position;
+
+        for [x, y] in self.rotated_shape() {
+            let new_x = (x + cx) as usize;
+            let new_y = (y + cy) as usize;
+
+            if new_y < board.len() && new_x < board[0].len() {
+                if board[new_y][new_x].action != DisplayAction::Empty {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
+
+    pub fn rotated_shape(self) -> Shape {
+       self.shape.map(|coord| {
             let [x, y] = coord;
             [(- y), x]
-        });
+        })
+    }
+
+    pub fn rotate(&mut self) {
+        self.shape = self.rotated_shape();
     }
 }
 
@@ -110,10 +153,13 @@ impl Default for DisplayBlock {
     }
 }
 
+type Board = [[DisplayBlock; 10]; 20];
+type Position = (i32, i32);
+
 #[derive(Debug, Clone, Copy)]
 pub struct Field {
-    board: [[DisplayBlock; 10]; 20],
-    position: (i32, i32),
+    board: Board,
+    position: Position,
     piece: Tetromino,
 }
 
@@ -122,7 +168,7 @@ impl Default for Field {
         Field {
             board: [[DisplayBlock::default(); 10]; 20],
             position: (5, 1),
-            piece: Tetromino::new(TetrominoType::J) // replace with random
+            piece: Tetromino::random()
         }
     }
 }
@@ -143,14 +189,14 @@ impl Field {
             Direction::Right => (x + 1, y    ),
             Direction::Down =>  (x,     y + 1),
         };
-        if self.piece_fits(self.piece, new_position) {
+        if self.piece.fits(self.board, new_position) {
             self.position = new_position;
         };
     }
 
     pub fn manipulate_current_piece(&mut self, action: DisplayAction) {
         let (cx, cy) = self.position;
-        if self.piece_fits(self.piece, self.position) {
+        if self.piece.fits(self.board, self.position) {
             for [x, y] in self.piece.shape {
                 let new_x = x + cx;
                 let new_y = y + cy;
@@ -159,26 +205,8 @@ impl Field {
         };
     }
 
-    fn piece_fits(&self, piece: Tetromino, position: (i32, i32)) -> bool {
-        let (cx, cy) = position;
-
-        for [x, y] in piece.shape {
-            let new_x = x + cx;
-            let new_y = y + cy;
-
-            if new_y >= 0 && new_y < self.board.len() as i32 && new_x >= 0 && new_x < self.board[0].len() as i32 {
-                if self.board[new_y as usize][new_x as usize].action != DisplayAction::Empty {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn piece_can_move_down(&self) -> bool {
-        self.piece_fits(self.piece, (self.position.0, self.position.1 + 1))
+    fn can_piece_move_down(&self) -> bool {
+        self.piece.fits(self.board, (self.position.0, self.position.1 + 1))
     }
 
     fn remove_full_lines(&mut self) {
@@ -254,22 +282,20 @@ async fn main() {
             start_time = get_time();
         }
 
-        if !field.piece_can_move_down() {
+        if !field.can_piece_move_down() {
             field.lock_piece();
         }
 
         if is_key_pressed(KeyCode::Space) {
-            while field.piece_can_move_down() {
+            while field.can_piece_move_down() {
                 field.move_current_piece(Direction::Down);
             }
         }
 
         if is_key_pressed(KeyCode::Up) {
-            field.piece.rotate();
-        }
-
-        if is_key_pressed(KeyCode::Enter) {
-            field.lock_piece();
+            if field.piece.fits_after_rotate(field.board, field.position) {
+                field.piece.rotate();
+            }
         }
 
         if is_key_pressed(KeyCode::Right) {
@@ -285,9 +311,10 @@ async fn main() {
         }
 
         field.manipulate_current_piece(DisplayAction::MustClean);
+
         field.draw_board();
 
-        let minimum_frame_time = 1. / 60.; // 10 FPS
+        let minimum_frame_time = 1. / 160.; // 160 FPS
         let frame_time = get_frame_time();
         if frame_time < minimum_frame_time {
             let time_to_sleep = (minimum_frame_time - frame_time) * 1000.;

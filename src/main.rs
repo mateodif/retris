@@ -9,6 +9,9 @@ mod state;
 mod tetromino;
 mod display;
 
+const TIME_INTERVAL: f64 = 1.2;
+const MIN_FRAME_TIME: f32 = 1. / 160.;
+
 #[macroquad::main("Retris")]
 async fn main() {
     let mut state = state::State::default();
@@ -17,12 +20,12 @@ async fn main() {
     loop {
         let (width, height) = state.screen_size;
         request_new_screen_size(width as f32, height as f32);
-        state.clean_board();
 
+        state.clean_board();
         clear_background(BLACK);
 
 
-        if get_time() > (start_time + 1.2) {
+        if get_time() > (start_time + TIME_INTERVAL) {
             state.move_current_piece(Direction::Down);
             start_time = get_time();
         }
@@ -59,10 +62,9 @@ async fn main() {
 
         state.draw_board();
 
-        let minimum_frame_time = 1. / 160.; // 160 FPS
         let frame_time = get_frame_time();
-        if frame_time < minimum_frame_time {
-            let time_to_sleep = (minimum_frame_time - frame_time) * 1000.;
+        if frame_time < MIN_FRAME_TIME {
+            let time_to_sleep = (MIN_FRAME_TIME - frame_time) * 1000.;
             std::thread::sleep(std::time::Duration::from_millis(time_to_sleep as u64));
         }
 

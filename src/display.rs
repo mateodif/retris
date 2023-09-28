@@ -13,14 +13,11 @@ pub struct DisplayBlock {
     pub action: DisplayAction
 }
 
-impl DisplayBlock {
-    pub fn new(color: Color, action: DisplayAction) -> Self {
-        Self { color: Some(color), action }
-    }
-}
-
 impl Default for DisplayBlock {
     fn default() -> DisplayBlock {
-        DisplayBlock::new(BLACK, DisplayAction::Empty)
+        DisplayBlock {
+            color: Some(BLACK),
+            action: DisplayAction::Empty
+        }
     }
 }

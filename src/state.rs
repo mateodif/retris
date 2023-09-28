@@ -59,7 +59,10 @@ impl State {
             for [x, y] in self.current_piece.shape {
                 let new_x = x + cx;
                 let new_y = y + cy;
-                self.board[new_y as usize][new_x as usize] = DisplayBlock::new(self.current_piece.color, action);
+                self.board[new_y as usize][new_x as usize] = DisplayBlock {
+                    color: Some(self.current_piece.color),
+                    action
+                };
             };
         };
     }
@@ -70,18 +73,19 @@ impl State {
 
     fn remove_full_lines(&mut self) {
         let mut non_zero_index = 0;
+        let empty_row = [DisplayBlock::default(); 10];
+        let is_persisted = |cell: &DisplayBlock| cell.action == DisplayAction::Persist;
 
         for current_index in 0..self.board.len() {
-            if !self.board[current_index].iter().all(|cell| cell.action == DisplayAction::Persist) {
+            if !self.board[current_index].iter().all(is_persisted) {
                 if current_index != non_zero_index {
                     self.board.swap(current_index, non_zero_index);
                 }
                 non_zero_index += 1;
             }
         }
-        for i in non_zero_index..self.board.len() {
-            self.board[i] = [DisplayBlock::default(); 10];
-        }
+
+        self.board[non_zero_index..].fill(empty_row);
 
         if non_zero_index > 0 {
             self.board.rotate_left(non_zero_index);

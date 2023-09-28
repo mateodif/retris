@@ -48,14 +48,14 @@ impl State {
             Direction::Right => (x + 1, y    ),
             Direction::Down =>  (x,     y + 1),
         };
-        if self.current_piece.fits(self.board, new_position) {
+        if self.current_piece.fits(&self.board, new_position) {
             self.position = new_position;
         };
     }
 
     pub fn manipulate_current_piece(&mut self, action: DisplayAction) {
         let (cx, cy) = self.position;
-        if self.current_piece.fits(self.board, self.position) {
+        if self.current_piece.fits(&self.board, self.position) {
             for [x, y] in self.current_piece.shape {
                 let new_x = x + cx;
                 let new_y = y + cy;
@@ -65,7 +65,7 @@ impl State {
     }
 
     pub fn can_piece_move_down(&self) -> bool {
-        self.current_piece.fits(self.board, (self.position.0, self.position.1 + 1))
+        self.current_piece.fits(&self.board, (self.position.0, self.position.1 + 1))
     }
 
     fn remove_full_lines(&mut self) {

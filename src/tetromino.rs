@@ -47,42 +47,29 @@ impl Tetromino {
         Self::new(TetrominoType::iter().get(num).unwrap_or(TetrominoType::I))
     }
 
-    pub fn fits(&self, board: Board, position: Position) -> bool {
+    pub fn fits(&self, board: &Board, position: Position) -> bool {
+        self.check_fit(board, position, &self.shape)
+    }
+
+    pub fn fits_after_rotate(&self, board: &Board, position: Position) -> bool {
+        self.check_fit(board, position, &self.rotated_shape())
+    }
+
+    fn check_fit(&self, board: &Board, position: Position, shape: &Shape) -> bool {
         let (cx, cy) = position;
 
-        for [x, y] in self.shape {
+        shape.iter().all(|[x, y]| {
             let new_x = (x + cx) as usize;
             let new_y = (y + cy) as usize;
 
-            if new_y < board.len() && new_x < board[0].len() {
-                if board[new_y][new_x].action != DisplayAction::Empty {
-                    return false;
+            if let Some(row) = board.get(new_y) {
+                if let Some(cell) = row.get(new_x) {
+                    return cell.action == DisplayAction::Empty;
                 }
-            } else {
-                return false;
             }
-        }
-        true
+            false
+        })
     }
-
-    pub fn fits_after_rotate(&self, board: Board, position: Position) -> bool {
-        let (cx, cy) = position;
-
-        for [x, y] in self.rotated_shape() {
-            let new_x = (x + cx) as usize;
-            let new_y = (y + cy) as usize;
-
-            if new_y < board.len() && new_x < board[0].len() {
-                if board[new_y][new_x].action != DisplayAction::Empty {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-        true
-    }
-
 
     pub fn rotated_shape(self) -> Shape {
        self.shape.map(|coord| {

@@ -38,7 +38,7 @@ async fn main() {
         }
 
         if is_key_pressed(KeyCode::Up) {
-            if state.current_piece.fits_after_rotate(state.board, state.position) {
+            if state.current_piece.fits_after_rotate(&state.board, state.position) {
                 state.current_piece.rotate();
             }
         }

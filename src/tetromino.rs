@@ -3,7 +3,7 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
 use crate::display::DisplayAction;
-use crate::state::{Board, Position};
+use crate::state::{Board, Position, ROW_COUNT, COLUMN_COUNT};
 
 
 #[derive(EnumIter, Debug, Clone, Copy)]
@@ -62,10 +62,9 @@ impl Tetromino {
             let new_x = (x + cx) as usize;
             let new_y = (y + cy) as usize;
 
-            if let Some(row) = board.get(new_y) {
-                if let Some(cell) = row.get(new_x) {
-                    return cell.action == DisplayAction::Empty;
-                }
+            if new_x < COLUMN_COUNT && new_y < ROW_COUNT {
+                let cell = &board[new_y * COLUMN_COUNT + new_x];
+                return cell.action == DisplayAction::Empty;
             }
             false
         })

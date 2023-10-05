@@ -1,4 +1,5 @@
-use macroquad::{prelude::*, rand};
+use macroquad::prelude::{Color, SKYBLUE, PURPLE, YELLOW, BLUE, ORANGE, GREEN, RED};
+use rand::Rng;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -42,9 +43,9 @@ impl Tetromino {
     }
 
     pub fn random() -> Self {
-        let max = TetrominoType::iter().count();
-        let num = rand::gen_range(0, max);
-        Self::new(TetrominoType::iter().get(num).unwrap_or(TetrominoType::I))
+        let tetrominos = TetrominoType::iter().collect::<Vec<_>>();
+        let tetromino = rand::thread_rng().gen_range(0..tetrominos.len());
+        Self::new(tetrominos[tetromino])
     }
 
     pub fn fits(&self, board: &Board, position: Position) -> bool {

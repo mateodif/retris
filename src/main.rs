@@ -16,6 +16,7 @@ const MIN_FRAME_TIME: f32 = 1. / 160.;
 async fn main() {
     let mut state = state::State::default();
     let mut start_time = get_time();
+    let mut pause = false;
 
     loop {
         let (width, height) = state.screen_size;
@@ -24,38 +25,46 @@ async fn main() {
         state.clean_board();
         clear_background(BLACK);
 
+        if pause {
+            draw_text("PAUSE", ((width / 2) - 98) as f32, (height / 2) as f32, 90.0, RED);
+        }
 
-        if get_time() > (start_time + TIME_INTERVAL) {
+
+        if get_time() > (start_time + TIME_INTERVAL) && !pause {
             state.move_current_piece(Direction::Down);
             start_time = get_time();
         }
 
-        if !state.can_piece_move_down() {
+        if !state.can_piece_move_down() && !pause {
             state.lock_piece();
         }
 
-        if is_key_pressed(KeyCode::Space) {
+        if is_key_pressed(KeyCode::Space) && !pause {
             while state.can_piece_move_down() {
                 state.move_current_piece(Direction::Down);
             }
         }
 
-        if is_key_pressed(KeyCode::Up) {
+        if is_key_pressed(KeyCode::Up) && !pause {
             if state.current_piece.fits_after_rotate(&state.board, state.position) {
                 state.current_piece.rotate();
             }
         }
 
-        if is_key_pressed(KeyCode::Right) {
+        if is_key_pressed(KeyCode::Right) && !pause {
             state.move_current_piece(Direction::Right);
         }
 
-        if is_key_pressed(KeyCode::Left) {
+        if is_key_pressed(KeyCode::Left) && !pause {
             state.move_current_piece(Direction::Left);
         }
 
-        if is_key_pressed(KeyCode::Down) {
+        if is_key_pressed(KeyCode::Down) && !pause {
             state.move_current_piece(Direction::Down);
+        }
+
+        if is_key_pressed(KeyCode::P) {
+            pause = !pause;
         }
 
         state.manipulate_current_piece(DisplayAction::MustClean);

@@ -24,25 +24,26 @@ async fn main() {
 
         state.clean_board();
         clear_background(BLACK);
+        let has_to_move = get_time() > (start_time + TIME_INTERVAL);
 
         if pause {
             draw_text("PAUSE", ((width / 2) - 98) as f32, (height / 2) as f32, 90.0, RED);
         }
 
-
-        if get_time() > (start_time + TIME_INTERVAL) && !pause {
-            state.move_current_piece(Direction::Down);
-            start_time = get_time();
+        if !state.can_piece_move_down() && has_to_move && !pause {
+            state.lock_piece();
         }
 
-        if !state.can_piece_move_down() && !pause {
-            state.lock_piece();
+        if has_to_move && !pause {
+            state.move_current_piece(Direction::Down);
+            start_time = get_time();
         }
 
         if is_key_pressed(KeyCode::Space) && !pause {
             while state.can_piece_move_down() {
                 state.move_current_piece(Direction::Down);
             }
+            state.lock_piece();
         }
 
         if is_key_pressed(KeyCode::Up) && !pause {
